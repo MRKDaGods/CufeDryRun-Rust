@@ -6,7 +6,7 @@ mod desktop;
 const TITLEBAR_PADDING_H: f32 = 12.0;
 const TITLEBAR_HEIGHT: f32 = 40.0;
 
-pub struct MainWindow {}
+pub struct MainWindow;
 
 impl MainWindow {
     pub fn new() -> Self {
