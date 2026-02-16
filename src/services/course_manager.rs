@@ -31,7 +31,7 @@ impl CourseManager {
             // Create new def
             None => {
                 let new_def = Rc::new(RefCell::new(CourseDefinition::new(code, name))); /* Allocation here */
-                self.course_definitions.push(Rc::clone(&new_def));                      /* yes, i just got to know rc */
+                self.course_definitions.push(Rc::clone(&new_def)); /* yes, i just got to know rc */
                 new_def
             }
         }

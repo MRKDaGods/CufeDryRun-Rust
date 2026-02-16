@@ -4,10 +4,10 @@ const RESIZE_MARGIN: f32 = 8.0;
 
 // Control button characters
 // segmdl2.ttf
-const CLOSE_CHAR: &str = "";
-const MAXIMIZE_CHAR: &str = "";
-const RESTORE_CHAR: &str = "";
-const MINIMIZE_CHAR: &str = "";
+const ICON_CLOSE: &str = "\u{E10A}";
+const ICON_MAXIMIZE: &str = "\u{E922}";
+const ICON_RESTORE: &str = "\u{E923}";
+const ICON_MINIMIZE: &str = "\u{E921}";
 
 pub fn handle_title_bar_events(ctx: &egui::Context, ui: &mut egui::Ui) {
     let title_bar_rect = ui.max_rect();
@@ -49,7 +49,7 @@ pub fn render_window_controls(ctx: &egui::Context, ui: &mut egui::Ui) {
     render_control_button(
         ctx,
         ui,
-        CLOSE_CHAR,
+        ICON_CLOSE,
         egui::Color32::from_rgb(232, 17, 35),
         13.0,
         egui::ViewportCommand::Close,
@@ -61,9 +61,9 @@ pub fn render_window_controls(ctx: &egui::Context, ui: &mut egui::Ui) {
         ctx,
         ui,
         if is_maximized {
-            RESTORE_CHAR
+            ICON_RESTORE
         } else {
-            MAXIMIZE_CHAR
+            ICON_MAXIMIZE
         },
         egui::Color32::from_rgb(61, 61, 61),
         9.0,
@@ -74,7 +74,7 @@ pub fn render_window_controls(ctx: &egui::Context, ui: &mut egui::Ui) {
     render_control_button(
         ctx,
         ui,
-        MINIMIZE_CHAR,
+        ICON_MINIMIZE,
         egui::Color32::from_rgb(61, 61, 61),
         9.0,
         egui::ViewportCommand::Minimized(true),
@@ -124,7 +124,7 @@ fn is_maximized(ctx: &egui::Context) -> bool {
     ctx.input(|i| i.viewport().maximized.unwrap_or(false))
 }
 
-fn calculate_resize_rects(screen_rect: egui::Rect) -> [egui::Rect; 4] {
+fn calculate_resize_rects(screen_rect: egui::Rect) -> [egui::Rect; 8] {
     [
         // Left
         egui::Rect::from_min_max(
@@ -144,6 +144,32 @@ fn calculate_resize_rects(screen_rect: egui::Rect) -> [egui::Rect; 4] {
         // Bottom
         egui::Rect::from_min_max(
             egui::pos2(screen_rect.min.x, screen_rect.max.y - RESIZE_MARGIN),
+            screen_rect.max,
+        ),
+        // Top-Left
+        egui::Rect::from_min_max(
+            screen_rect.min,
+            egui::pos2(
+                screen_rect.min.x + RESIZE_MARGIN,
+                screen_rect.min.y + RESIZE_MARGIN,
+            ),
+        ),
+        // Top-Right
+        egui::Rect::from_min_max(
+            egui::pos2(screen_rect.max.x - RESIZE_MARGIN, screen_rect.min.y),
+            egui::pos2(screen_rect.max.x, screen_rect.min.y + RESIZE_MARGIN),
+        ),
+        // Bottom-Left
+        egui::Rect::from_min_max(
+            egui::pos2(screen_rect.min.x, screen_rect.max.y - RESIZE_MARGIN),
+            egui::pos2(screen_rect.min.x + RESIZE_MARGIN, screen_rect.max.y),
+        ),
+        // Bottom-Right
+        egui::Rect::from_min_max(
+            egui::pos2(
+                screen_rect.max.x - RESIZE_MARGIN,
+                screen_rect.max.y - RESIZE_MARGIN,
+            ),
             screen_rect.max,
         ),
     ]
@@ -168,6 +194,10 @@ fn handle_single_resize_edge(
             1 => egui::CursorIcon::ResizeEast,
             2 => egui::CursorIcon::ResizeNorth,
             3 => egui::CursorIcon::ResizeSouth,
+            4 => egui::CursorIcon::ResizeNorthWest,
+            5 => egui::CursorIcon::ResizeNorthEast,
+            6 => egui::CursorIcon::ResizeSouthWest,
+            7 => egui::CursorIcon::ResizeSouthEast,
             _ => egui::CursorIcon::Default,
         });
     }
@@ -178,6 +208,10 @@ fn handle_single_resize_edge(
             1 => egui::ResizeDirection::East,
             2 => egui::ResizeDirection::North,
             3 => egui::ResizeDirection::South,
+            4 => egui::ResizeDirection::NorthWest,
+            5 => egui::ResizeDirection::NorthEast,
+            6 => egui::ResizeDirection::SouthWest,
+            7 => egui::ResizeDirection::SouthEast,
             _ => egui::ResizeDirection::East,
         }));
     }

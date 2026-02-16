@@ -1,6 +1,6 @@
 use crate::{
     models::{CourseParseFormat, CourseRecord, CourseRecordType},
-    services::course_manager::CourseManager,
+    services::CourseManager,
 };
 use chrono::{Duration, NaiveTime, Timelike, Weekday};
 use regex::Regex;

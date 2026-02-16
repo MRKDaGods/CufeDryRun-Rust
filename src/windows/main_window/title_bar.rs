@@ -1,4 +1,6 @@
-use super::{TITLEBAR_HEIGHT, TITLEBAR_PADDING_H};
+use super::TITLEBAR_HEIGHT;
+
+const TITLEBAR_PADDING_H: f32 = 12.0;
 
 pub fn render_title_bar(ctx: &egui::Context) {
     egui::TopBottomPanel::top("titlebar")
@@ -8,6 +10,7 @@ pub fn render_title_bar(ctx: &egui::Context) {
             ..Default::default()
         })
         .exact_height(TITLEBAR_HEIGHT)
+        .show_separator_line(false)
         .show(ctx, |ui| {
             // Title bar events on windows
             #[cfg(not(target_arch = "wasm32"))]

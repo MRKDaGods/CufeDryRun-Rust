@@ -1,4 +1,4 @@
-use crate::services::course_manager::CourseManager;
+use crate::services::CourseManager;
 use crate::utils;
 use crate::windows::MainWindow;
 use std::sync::Arc;
@@ -17,9 +17,9 @@ impl CrynApp {
         utils::log("Cryn started");
 
         // Configure theme
-        let mut visuals = egui::Visuals::dark();
-        visuals.override_text_color = Some(egui::Color32::WHITE);
-        cc.egui_ctx.set_visuals(visuals);
+        //let mut visuals = egui::Visuals::dark();
+        //visuals.override_text_color = Some(egui::Color32::WHITE);
+        //cc.egui_ctx.set_visuals(visuals);
 
         // Fonts
         Self::setup_fonts(cc);
@@ -68,7 +68,7 @@ impl CrynApp {
     fn initialize_course_manager() -> CourseManager {
         let mut course_manager = CourseManager::new();
         let data = include_str!("../assets/data/sample_courses.txt");
-        course_manager.parse_courses(data);
+        //course_manager.parse_courses(data);
 
         println!("Courses: {:?}", course_manager.course_records);
 
