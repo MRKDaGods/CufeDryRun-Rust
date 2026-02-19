@@ -1,7 +1,10 @@
 use std::any::TypeId;
 
 use super::MainWindow;
-use crate::views::{PlaceholderView, TimeTableView, View};
+use crate::{
+    CrynContext,
+    views::{CoursesView, PlaceholderView, TimeTableView, View},
+};
 
 const NAVBAR_HEIGHT: f32 = 42.0;
 
@@ -12,7 +15,7 @@ const ICON_LIBRARY: &str = "\u{E8F1}";
 const ICON_SETTINGS: &str = "\u{E713}";
 const ICON_SCREENSHOT: &str = "\u{E158}";
 
-pub fn render_nav_bar(main_window: &mut MainWindow, ctx: &egui::Context) {
+pub fn render_nav_bar(main_window: &mut MainWindow, ctx: &egui::Context, app_ctx: &CrynContext) {
     let button_width = (ctx.content_rect().width() / 8.0).clamp(100.0, 150.0);
     egui::TopBottomPanel::bottom("navbar")
         .frame(egui::Frame {
@@ -42,14 +45,16 @@ pub fn render_nav_bar(main_window: &mut MainWindow, ctx: &egui::Context) {
                     // Left side buttons
                     render_button_view::<TimeTableView>(
                         main_window,
+                        app_ctx,
                         ctx,
                         ui,
                         ICON_CALENDAR,
                         "Time Table",
                         button_width,
                     );
-                    render_button_view::<PlaceholderView>(
+                    render_button_view::<CoursesView>(
                         main_window,
+                        app_ctx,
                         ctx,
                         ui,
                         ICON_LIBRARY,
@@ -61,6 +66,7 @@ pub fn render_nav_bar(main_window: &mut MainWindow, ctx: &egui::Context) {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         render_button_view::<PlaceholderView>(
                             main_window,
+                            app_ctx,
                             ctx,
                             ui,
                             ICON_SETTINGS,
@@ -86,6 +92,7 @@ pub fn render_nav_bar(main_window: &mut MainWindow, ctx: &egui::Context) {
 
 fn render_button_view<V: View + 'static>(
     main_window: &mut MainWindow,
+    app_ctx: &CrynContext,
     ctx: &egui::Context,
     ui: &mut egui::Ui,
     icon: &str,
@@ -101,7 +108,7 @@ fn render_button_view<V: View + 'static>(
         icon,
         label,
         button_width,
-        Some(|mw: &mut MainWindow| mw.switch_to_view::<V>()),
+        Some(|mw: &mut MainWindow| mw.switch_to_view::<V>(app_ctx)),
         Some(is_active),
     );
 }

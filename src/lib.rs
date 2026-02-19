@@ -1,8 +1,8 @@
-pub mod models;
-pub mod utils;
-pub mod windows;
-pub mod services;
-pub mod views;
 mod app;
+pub mod models;
+pub mod services;
+pub mod utils;
+pub mod views;
+pub mod windows;
 
-pub use app::CrynApp;
+pub use app::*;

@@ -1,22 +1,22 @@
 use super::View;
 use crate::CrynContext;
 
-pub struct PlaceholderView;
+pub struct CoursesView;
 
-impl View for PlaceholderView {
+impl View for CoursesView {
     fn name(&self) -> &str {
-        "Placeholder"
+        "Courses"
     }
 
     fn on_show(&self, _app_ctx: &CrynContext) {
-        println!("Placeholder::hello")
+        println!("CoursesView::hello")
     }
 
     fn on_hide(&self, _app_ctx: &CrynContext) {
-        println!("Placeholder::bye")
+        println!("CoursesView::bye")
     }
 
     fn on_gui(&self, ui: &mut egui::Ui, _app_ctx: &CrynContext) {
-        ui.heading("Placeholder View");
+        ui.heading("Courses View");
     }
 }

@@ -1,14 +1,17 @@
-use crate::services::CourseManager;
-use crate::utils;
-use crate::windows::MainWindow;
-use std::sync::Arc;
+use crate::{services::CourseManager, utils, windows::MainWindow};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
+
+pub struct CrynContext {
+    pub course_manager: Rc<RefCell<CourseManager>>,
+}
 
 pub struct CrynApp {
     /* Windows */
     main_window: MainWindow,
 
     /* Whatever */
-    course_manager: CourseManager,
+    _course_manager: Rc<RefCell<CourseManager>>,
+    context: CrynContext,
 }
 
 impl CrynApp {
@@ -29,9 +32,15 @@ impl CrynApp {
             style.interaction.selectable_labels = false;
         });
 
+        let course_manager = Self::initialize_course_manager(); /* Original ref */
+        let app_ctx = CrynContext {
+            course_manager: Rc::clone(&course_manager),
+        };
+
         Self {
-            main_window: MainWindow::new(),
-            course_manager: Self::initialize_course_manager(),
+            main_window: MainWindow::new(&app_ctx),
+            _course_manager: course_manager,
+            context: app_ctx,
         }
     }
 
@@ -65,14 +74,14 @@ impl CrynApp {
         cc.egui_ctx.set_fonts(fonts);
     }
 
-    fn initialize_course_manager() -> CourseManager {
+    fn initialize_course_manager() -> Rc<RefCell<CourseManager>> {
         let mut course_manager = CourseManager::new();
         let data = include_str!("../assets/data/sample_courses.txt");
-        //course_manager.parse_courses(data);
+        course_manager.parse_courses(data);
 
         println!("Courses: {:?}", course_manager.course_records);
 
-        course_manager
+        Rc::new(RefCell::new(course_manager))
     }
 }
 
@@ -80,6 +89,6 @@ impl CrynApp {
 impl eframe::App for CrynApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Render main window
-        self.main_window.render(ctx);
+        self.main_window.render(ctx, &self.context);
     }
 }

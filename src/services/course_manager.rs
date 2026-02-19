@@ -1,10 +1,11 @@
 use super::parsers::standard_course_parser;
 use crate::models::{CourseDefinition, CourseRecord};
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 pub struct CourseManager {
     pub course_definitions: Vec<Rc<RefCell<CourseDefinition>>>,
     pub course_records: Vec<CourseRecord>,
+    pub selected_courses: HashSet<Rc<RefCell<CourseDefinition>>>,
 }
 
 impl CourseManager {
@@ -12,6 +13,7 @@ impl CourseManager {
         CourseManager {
             course_definitions: Vec::new(),
             course_records: Vec::new(),
+            selected_courses: HashSet::new(),
         }
     }
 

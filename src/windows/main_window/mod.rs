@@ -1,4 +1,7 @@
-use crate::views::{PlaceholderView, TimeTableView, View};
+use crate::{
+    CrynContext,
+    views::{CoursesView, PlaceholderView, TimeTableView, View},
+};
 use std::{any::TypeId, collections::HashMap};
 
 mod nav_bar;
@@ -15,7 +18,7 @@ pub struct MainWindow {
 }
 
 impl MainWindow {
-    pub fn new() -> Self {
+    pub fn new(app_ctx: &CrynContext) -> Self {
         let mut window = Self {
             views: HashMap::new(),
             current_view_id: None,
@@ -23,10 +26,11 @@ impl MainWindow {
 
         // Register views
         window.register_view(TimeTableView);
+        window.register_view(CoursesView);
         window.register_view(PlaceholderView);
 
         // TT view by def
-        window.switch_to_view::<TimeTableView>();
+        window.switch_to_view::<TimeTableView>(app_ctx);
 
         window
     }
@@ -35,7 +39,7 @@ impl MainWindow {
         self.views.insert(TypeId::of::<V>(), Box::new(view));
     }
 
-    pub fn switch_to_view<V: View + 'static>(&mut self) {
+    pub fn switch_to_view<V: View + 'static>(&mut self, app_ctx: &CrynContext) {
         let target_id = TypeId::of::<V>();
 
         // Does target view exist?
@@ -51,20 +55,20 @@ impl MainWindow {
         // Hide current
         if let Some(current_view_id) = self.current_view_id {
             let current_view = &self.views[&current_view_id];
-            if !current_view.can_hide() {
+            if !current_view.can_hide(app_ctx) {
                 return;
             }
 
-            current_view.on_hide();
+            current_view.on_hide(app_ctx);
         }
 
         // Update to new view
         self.current_view_id = Some(target_id); /* Copied */
-        target_view.unwrap().on_show();
+        target_view.unwrap().on_show(app_ctx);
     }
 
     /// Main render method
-    pub fn render(&mut self, ctx: &egui::Context) {
+    pub fn render(&mut self, ctx: &egui::Context, app_ctx: &CrynContext) {
         #[cfg(not(target_arch = "wasm32"))]
         desktop::handle_resize_events(ctx);
 
@@ -72,18 +76,19 @@ impl MainWindow {
         title_bar::render_title_bar(ctx);
 
         // Nav bar
-        nav_bar::render_nav_bar(self, ctx);
+        nav_bar::render_nav_bar(self, ctx, app_ctx);
 
         // Content
-        self.render_content(ctx);
+        self.render_content(ctx, app_ctx);
     }
 
     /// Render the main content
-    fn render_content(&self, ctx: &egui::Context) {
+    fn render_content(&self, ctx: &egui::Context, app_ctx: &CrynContext) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.centered_and_justified(|ui| {
-                ui.heading("timetable");
-            });
+            if let Some(current_view_id) = self.current_view_id {
+                let current_view = &self.views[&current_view_id];
+                current_view.as_ref().on_gui(ui, app_ctx);
+            }
         });
     }
 }
