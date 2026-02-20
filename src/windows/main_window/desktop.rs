@@ -1,6 +1,6 @@
 use super::TITLEBAR_HEIGHT;
 
-const RESIZE_MARGIN: f32 = 8.0;
+const RESIZE_MARGIN: f32 = 4.0;
 
 // Control button characters
 // segmdl2.ttf

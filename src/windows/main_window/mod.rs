@@ -1,5 +1,3 @@
-use egui::{Color32, RichText};
-
 use crate::{
     CrynContext,
     views::{CoursesView, PlaceholderView, TimeTableView, View},
@@ -14,6 +12,7 @@ mod desktop;
 
 const TITLEBAR_HEIGHT: f32 = 40.0;
 const NAVBAR_HEIGHT: f32 = 42.0;
+const CONTENT_PADDING: i8 = 16;
 
 pub struct MainWindow {
     views: HashMap<TypeId, Box<dyn View>>,
@@ -76,7 +75,7 @@ impl MainWindow {
         desktop::handle_resize_events(ctx);
 
         // Title bar and window controls
-        title_bar::render_title_bar(ctx);
+        title_bar::render_title_bar(ctx, self.get_current_view());
 
         // Nav bar
         nav_bar::render_nav_bar(self, ctx, app_ctx);
@@ -90,48 +89,36 @@ impl MainWindow {
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::new()
-                    .inner_margin(egui::Margin {
-                        left: 32,
-                        right: 32,
-                        top: 16,
-                        bottom: 8,
-                    })
+                    .inner_margin(egui::Margin::ZERO) // egui::Margin::same(CONTENT_PADDING)
                     .fill(ctx.style().visuals.window_fill),
             )
             .show(ctx, |ui| {
                 // Render current view
-                let current_view_id = self
-                    .current_view_id
-                    .unwrap_or(TypeId::of::<PlaceholderView>());
-
-                if let Some(current_view) = self.views.get(&current_view_id) {
-                    ui.vertical(|ui| {
-                        // View name
-                        ui.label(RichText::new(current_view.name()).heading().size(28.0));
-
-                        // yadobak netsa7ar dlw2ty
-
-                        // View content
-                        egui::Frame::new()
-                            .outer_margin(egui::Margin {
-                                left: 8,
-                                right: 8,
-                                top: 24,
-                                bottom: 0,
-                            })
-                            .stroke(egui::Stroke::new(1.0, ctx.style().visuals.extreme_bg_color))
-                            .show(ui, |ui| {
-                                //ui.allocate_space(ui.available_size());
-                                ui.add_sized(ui.available_size(), egui::Label::new("Loading..."));
-                                //current_view.as_ref().on_gui(ui, app_ctx);
-                            });
+                if let Some(current_view) = self.get_current_view() {
+                    //ui.add_sized(ui.available_size(), egui::Label::new("Loading..."));
+                    ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
+                        current_view.as_ref().on_gui(ui, app_ctx)
                     });
                 } else {
-                    // No view found
                     ui.centered_and_justified(|ui| {
-                        ui.heading(format!("View {:?} not found", current_view_id));
+                        ui.heading(match self.current_view_id {
+                            Some(current_view_id) => {
+                                format!("View {:?} not found", current_view_id)
+                            }
+
+                            // No view?
+                            None => "No view set".to_owned(),
+                        });
                     });
                 }
             });
+    }
+
+    fn get_current_view(&self) -> Option<&Box<dyn View>> {
+        let current_view_id = self
+            .current_view_id
+            .unwrap_or(TypeId::of::<PlaceholderView>());
+
+        self.views.get(&current_view_id)
     }
 }
