@@ -79,7 +79,7 @@ impl CrynApp {
         let data = include_str!("../assets/data/sample_courses.txt");
         course_manager.parse_courses(data);
 
-        println!("Courses: {:?}", course_manager.course_records);
+        //println!("Courses: {:?}", course_manager.course_records);
 
         Rc::new(RefCell::new(course_manager))
     }

@@ -1,12 +1,10 @@
 use std::any::TypeId;
 
-use super::MainWindow;
+use super::{MainWindow, NAVBAR_HEIGHT};
 use crate::{
     CrynContext,
     views::{CoursesView, PlaceholderView, TimeTableView, View},
 };
-
-const NAVBAR_HEIGHT: f32 = 42.0;
 
 // Navbar characters
 // segmdl2.ttf
