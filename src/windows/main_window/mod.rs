@@ -1,9 +1,13 @@
 use crate::{
     CrynContext,
     views::{CoursesView, PlaceholderView, TimeTableView, View},
+    windows::Window,
 };
-use egui::{Align, CentralPanel, Frame, Layout, epaint::MarginF32};
-use std::{any::TypeId, collections::HashMap};
+use egui::{CentralPanel, Frame, epaint::MarginF32};
+use std::{
+    any::{Any, TypeId},
+    collections::HashMap,
+};
 
 mod nav_bar;
 mod title_bar;
@@ -20,6 +24,12 @@ pub const CONTENT_PADDING: f32 = 8.0;
 pub struct MainWindow {
     views: HashMap<TypeId, Box<dyn View>>,
     current_view_id: Option<TypeId>,
+
+    /// Post-render target view switch request
+    requested_target_view_id: Option<TypeId>,
+
+    /// Safe guard to prevent switching views while rendering content
+    is_rendering_content: bool,
 }
 
 impl MainWindow {
@@ -27,10 +37,12 @@ impl MainWindow {
         let mut window = Self {
             views: HashMap::new(),
             current_view_id: None,
+            requested_target_view_id: None,
+            is_rendering_content: false,
         };
 
         // Register views
-        window.register_view(TimeTableView);
+        window.register_view(TimeTableView::new());
         window.register_view(CoursesView::new());
         window.register_view(PlaceholderView);
 
@@ -45,8 +57,16 @@ impl MainWindow {
     }
 
     pub fn switch_to_view<V: View + 'static>(&mut self, app_ctx: &CrynContext) {
-        let target_id = TypeId::of::<V>();
+        if self.is_rendering_content {
+            // Defer view switch until after rendering
+            self.request_switch_to_view::<V>();
+            return;
+        }
 
+        self.switch_to_view_internal(TypeId::of::<V>(), app_ctx);
+    }
+
+    fn switch_to_view_internal(&mut self, target_id: TypeId, app_ctx: &CrynContext) {
         if self.current_view_id == Some(target_id) {
             return;
         }
@@ -59,7 +79,6 @@ impl MainWindow {
 
         // Hide current
         if let Some(current_view_id) = self.current_view_id {
-
             let current_view = &mut self.views.get_mut(&current_view_id).unwrap();
             if !current_view.can_hide(app_ctx) {
                 return;
@@ -74,6 +93,10 @@ impl MainWindow {
         target_view.on_show(app_ctx);
     }
 
+    pub fn request_switch_to_view<V: View + 'static>(&mut self) {
+        self.requested_target_view_id = Some(TypeId::of::<V>());
+    }
+
     /// Main render method
     pub fn render(&mut self, ctx: &egui::Context, app_ctx: &CrynContext) {
         #[cfg(not(target_arch = "wasm32"))]
@@ -86,7 +109,15 @@ impl MainWindow {
         nav_bar::render_nav_bar(self, ctx, app_ctx);
 
         // Content
+        self.is_rendering_content = true;
         self.render_content(ctx, app_ctx);
+        self.is_rendering_content = false;
+
+        // Handle post-render requested view switch
+        if let Some(target_view_id) = self.requested_target_view_id {
+            self.switch_to_view_internal(target_view_id, app_ctx);
+            self.requested_target_view_id = None;
+        }
     }
 
     /// Render the main content
@@ -104,10 +135,15 @@ impl MainWindow {
             )
             .show(ctx, |ui| {
                 // Render current view
-                if let Some(current_view) = self.get_current_view() {
-                    ui.with_layout(Layout::top_down(Align::Center), |ui| {
-                        current_view.as_mut().on_gui(ui, app_ctx)
-                    });
+                if let Some(mut view) = self
+                    .views
+                    .remove(&self.current_view_id.unwrap_or(TypeId::of::<()>()))
+                {
+                    // Temporarily separate view
+                    view.on_gui(ui, app_ctx, self);
+
+                    // Put it back
+                    self.views.insert(self.current_view_id.unwrap(), view);
                 } else {
                     ui.centered_and_justified(|ui| {
                         ui.heading(match self.current_view_id {
@@ -129,5 +165,19 @@ impl MainWindow {
             .unwrap_or(TypeId::of::<PlaceholderView>());
 
         self.views.get_mut(&current_view_id)
+    }
+}
+
+impl Window for MainWindow {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    fn views(&self) -> &HashMap<TypeId, Box<dyn View>> {
+        &self.views
     }
 }

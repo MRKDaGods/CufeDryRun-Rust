@@ -4,7 +4,7 @@ use std::{cell::RefCell, rc::Rc};
 
 pub struct CourseManager {
     pub course_definitions: Vec<Rc<RefCell<CourseDefinition>>>,
-    pub course_records: Vec<CourseRecord>,
+    pub course_records: Vec<Rc<RefCell<CourseRecord>>>, // Shouldve seen this coming lmao
 }
 
 impl CourseManager {
@@ -39,5 +39,13 @@ impl CourseManager {
 
     pub fn parse_courses(&mut self, data: &str) {
         standard_course_parser::parse(self, data)
+    }
+
+    pub fn get_available_course_records(&self) -> Vec<Rc<RefCell<CourseRecord>>> {
+        self.course_records
+            .iter()
+            .filter(|&record| record.borrow().course_definition.borrow().selected)
+            .cloned() // &Rc<RefCell<CourseRecord>> -> Rc<RefCell<CourseRecord>>
+            .collect()
     }
 }

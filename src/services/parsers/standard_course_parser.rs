@@ -4,7 +4,7 @@ use crate::{
 };
 use chrono::{Duration, NaiveTime, Timelike, Weekday};
 use regex::Regex;
-use std::{collections::HashMap, rc::Rc, usize};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, usize};
 
 const MIN_HOUR: u32 = 8;
 
@@ -69,20 +69,22 @@ pub fn parse(course_manager: &mut CourseManager, data: &str) {
             }
         }
 
-        course_manager.course_records.push(CourseRecord::new(
-            Rc::clone(&course_definition_rc),
-            group,
-            record_type,
-            day,
-            from,
-            to,
-            class_size,
-            enrolled,
-            waiting,
-            status,
-            location,
-            parse_format,
-        ));
+        course_manager
+            .course_records
+            .push(Rc::new(RefCell::new(CourseRecord::new(
+                Rc::clone(&course_definition_rc),
+                group,
+                record_type,
+                day,
+                from,
+                to,
+                class_size,
+                enrolled,
+                waiting,
+                status,
+                location,
+                parse_format,
+            ))));
     }
 
     // Sort courses and apply flags
@@ -96,9 +98,12 @@ fn post_process_courses(course_manager: &mut CourseManager) {
         .sort_by(|a, b| a.borrow().code.cmp(&b.borrow().code));
 
     // Sort records by day then time
-    course_manager
-        .course_records
-        .sort_by_key(|record| (record.day.days_since(Weekday::Sat), record.start_time));
+    course_manager.course_records.sort_by_key(|record| {
+        (
+            record.borrow().day.days_since(Weekday::Sat),
+            record.borrow().start_time,
+        )
+    });
 
     // Flags
     course_manager.course_definitions.iter().for_each(|def_rc| {
@@ -142,9 +147,12 @@ fn post_process_courses(course_manager: &mut CourseManager) {
         course_manager
             .course_records
             .iter_mut()
-            .filter(|record| record.course_definition.borrow().code == def_rc.borrow().code)
+            .filter(|record| {
+                record.borrow().course_definition.borrow().code == def_rc.borrow().code
+            })
             .into_iter()
             .for_each(|record| {
+                let record = &mut *record.borrow_mut();
                 count_groups(record, CourseRecordType::Lecture);
                 count_groups(record, CourseRecordType::Tutorial);
             });

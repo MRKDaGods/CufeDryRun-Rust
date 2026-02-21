@@ -79,17 +79,17 @@ impl CrynApp {
         let data = include_str!("../assets/data/sample_courses.txt");
         course_manager.parse_courses(data);
 
-        utils::log(
-            format!(
-                "Courses: {:?}",
-                course_manager
-                    .course_records
-                    .iter()
-                    .filter(|x| !x.course_definition.borrow().flags.is_empty())
-                    .collect::<Vec<_>>()
-            )
-            .as_str(),
-        );
+        // utils::log(
+        //     format!(
+        //         "Courses: {:?}",
+        //         course_manager
+        //             .course_records
+        //             .iter()
+        //             .filter(|x| !x.borrow().course_definition.borrow().flags.is_empty())
+        //             .collect::<Vec<_>>()
+        //     )
+        //     .as_str(),
+        // );
 
         Rc::new(RefCell::new(course_manager))
     }

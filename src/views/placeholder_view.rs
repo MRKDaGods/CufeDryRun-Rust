@@ -1,5 +1,5 @@
 use super::View;
-use crate::CrynContext;
+use crate::{CrynContext, windows::Window};
 
 pub struct PlaceholderView;
 
@@ -16,7 +16,7 @@ impl View for PlaceholderView {
         println!("Placeholder::bye")
     }
 
-    fn on_gui(&mut self, ui: &mut egui::Ui, _app_ctx: &CrynContext) {
+    fn on_gui(&mut self, ui: &mut egui::Ui, _app_ctx: &CrynContext, _window: &mut dyn Window) {
         ui.heading("Placeholder View");
     }
 }

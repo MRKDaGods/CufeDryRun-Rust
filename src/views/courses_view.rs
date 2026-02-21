@@ -1,5 +1,9 @@
 use super::View;
-use crate::{CrynContext, models::CourseDefinition, windows::main_window::CONTENT_PADDING};
+use crate::{
+    CrynContext,
+    models::CourseDefinition,
+    windows::{Window, main_window::CONTENT_PADDING},
+};
 use egui::{
     Align, CentralPanel, Frame, Label, Layout, Response, Sense, TextEdit, TextWrapMode,
     TopBottomPanel, epaint::MarginF32,
@@ -129,7 +133,7 @@ impl View for CoursesView {
         self.selected_row_idx = None;
     }
 
-    fn on_gui(&mut self, ui: &mut egui::Ui, app_ctx: &CrynContext) {
+    fn on_gui(&mut self, ui: &mut egui::Ui, app_ctx: &CrynContext, _window: &mut dyn Window) {
         let definitions = &app_ctx.course_manager.borrow().course_definitions;
 
         if definitions.is_empty() {
