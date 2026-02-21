@@ -3,7 +3,7 @@ use chrono::{NaiveTime, Weekday};
 use std::{cell::RefCell, rc::Rc};
 use strum::EnumString;
 
-#[derive(Debug, EnumString)]
+#[derive(Debug, EnumString, PartialEq)]
 #[strum(ascii_case_insensitive)]
 pub enum CourseRecordType {
     None,

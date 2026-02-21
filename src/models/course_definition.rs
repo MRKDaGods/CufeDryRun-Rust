@@ -1,8 +1,32 @@
-#[derive(Debug)]
-pub enum CourseFlags {
-    None = 0,
-    MultipleLectures = 1 << 0,
-    MultipleTutorials = 1 << 1,
+use bitflags::bitflags;
+
+bitflags! {
+    #[derive(Debug)]
+    pub struct CourseFlags: u8 {
+        const None = 0;
+        const MultipleLectures = 1 << 0;
+        const MultipleTutorials = 1 << 1;
+    }
+}
+
+impl std::fmt::Display for CourseFlags {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut flags = Vec::<String>::new();
+
+        if self.contains(CourseFlags::MultipleLectures) {
+            flags.push("Multiple Lectures".to_owned());
+        }
+
+        if self.contains(CourseFlags::MultipleTutorials) {
+            flags.push("Multiple Tutorials".to_owned());
+        }
+
+        if flags.is_empty() {
+            flags.push("None".to_owned());
+        }
+
+        write!(f, "{}", flags.join(", "))
+    }
 }
 
 #[derive(Debug)]
@@ -10,6 +34,7 @@ pub struct CourseDefinition {
     pub code: String,
     pub name: String,
     pub flags: CourseFlags, // For ykyk ;) bas we're graduating 5alas :(
+    pub selected: bool,
 
     // To remove later?
     pub lecture_count: u32,
@@ -29,9 +54,10 @@ impl CourseDefinition {
 impl Default for CourseDefinition {
     fn default() -> Self {
         Self {
-            code: String::from("AMMR123"),
-            name: String::from("ammar wkda"),
+            code: "AMMR123".to_owned(),
+            name: "ammar wkda".to_owned(),
             flags: CourseFlags::None,
+            selected: false,
             lecture_count: 0,
             tutorial_count: 0,
         }

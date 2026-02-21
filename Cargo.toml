@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bitflags = "2.11.0"
 chrono = "0.4.43"
 eframe = { version = "0.33.3", features = ["wgpu"] }
 egui = "0.33.3"
+egui_extras = "0.33.3"
 regex = "1.12.3"
 strum = { version = "0.27.2", features = ["derive"] }
 

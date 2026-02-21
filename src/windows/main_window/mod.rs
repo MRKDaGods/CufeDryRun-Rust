@@ -2,6 +2,7 @@ use crate::{
     CrynContext,
     views::{CoursesView, PlaceholderView, TimeTableView, View},
 };
+use egui::{Align, CentralPanel, Frame, Layout, epaint::MarginF32};
 use std::{any::TypeId, collections::HashMap};
 
 mod nav_bar;
@@ -12,7 +13,9 @@ mod desktop;
 
 const TITLEBAR_HEIGHT: f32 = 40.0;
 const NAVBAR_HEIGHT: f32 = 42.0;
-const CONTENT_PADDING: i8 = 16;
+
+#[allow(unused)]
+pub const CONTENT_PADDING: f32 = 8.0;
 
 pub struct MainWindow {
     views: HashMap<TypeId, Box<dyn View>>,
@@ -28,7 +31,7 @@ impl MainWindow {
 
         // Register views
         window.register_view(TimeTableView);
-        window.register_view(CoursesView);
+        window.register_view(CoursesView::new());
         window.register_view(PlaceholderView);
 
         // TT view by def
@@ -44,19 +47,20 @@ impl MainWindow {
     pub fn switch_to_view<V: View + 'static>(&mut self, app_ctx: &CrynContext) {
         let target_id = TypeId::of::<V>();
 
-        // Does target view exist?
-        let target_view = self.views.get(&target_id);
-        if target_view.is_none() {
+        if self.current_view_id == Some(target_id) {
             return;
         }
 
-        if self.current_view_id == Some(target_id) {
+        // Does target view exist?
+        let view_exists = self.views.contains_key(&target_id);
+        if !view_exists {
             return;
         }
 
         // Hide current
         if let Some(current_view_id) = self.current_view_id {
-            let current_view = &self.views[&current_view_id];
+
+            let current_view = &mut self.views.get_mut(&current_view_id).unwrap();
             if !current_view.can_hide(app_ctx) {
                 return;
             }
@@ -66,7 +70,8 @@ impl MainWindow {
 
         // Update to new view
         self.current_view_id = Some(target_id); /* Copied */
-        target_view.unwrap().on_show(app_ctx);
+        let target_view = &mut self.views.get_mut(&target_id).unwrap();
+        target_view.on_show(app_ctx);
     }
 
     /// Main render method
@@ -75,7 +80,7 @@ impl MainWindow {
         desktop::handle_resize_events(ctx);
 
         // Title bar and window controls
-        title_bar::render_title_bar(ctx, self.get_current_view());
+        title_bar::render_title_bar(ctx, self.get_current_view().as_deref());
 
         // Nav bar
         nav_bar::render_nav_bar(self, ctx, app_ctx);
@@ -85,19 +90,23 @@ impl MainWindow {
     }
 
     /// Render the main content
-    fn render_content(&self, ctx: &egui::Context, app_ctx: &CrynContext) {
-        egui::CentralPanel::default()
+    fn render_content(&mut self, ctx: &egui::Context, app_ctx: &CrynContext) {
+        let view_padding = self
+            .get_current_view()
+            .filter(|v| v.padding().is_some())
+            .map_or(MarginF32::ZERO, |v| v.padding().unwrap());
+
+        CentralPanel::default()
             .frame(
-                egui::Frame::new()
-                    .inner_margin(egui::Margin::ZERO) // egui::Margin::same(CONTENT_PADDING)
+                Frame::new()
+                    .inner_margin(view_padding)
                     .fill(ctx.style().visuals.window_fill),
             )
             .show(ctx, |ui| {
                 // Render current view
                 if let Some(current_view) = self.get_current_view() {
-                    //ui.add_sized(ui.available_size(), egui::Label::new("Loading..."));
-                    ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
-                        current_view.as_ref().on_gui(ui, app_ctx)
+                    ui.with_layout(Layout::top_down(Align::Center), |ui| {
+                        current_view.as_mut().on_gui(ui, app_ctx)
                     });
                 } else {
                     ui.centered_and_justified(|ui| {
@@ -114,11 +123,11 @@ impl MainWindow {
             });
     }
 
-    fn get_current_view(&self) -> Option<&Box<dyn View>> {
+    fn get_current_view(&mut self) -> Option<&mut Box<dyn View>> {
         let current_view_id = self
             .current_view_id
             .unwrap_or(TypeId::of::<PlaceholderView>());
 
-        self.views.get(&current_view_id)
+        self.views.get_mut(&current_view_id)
     }
 }

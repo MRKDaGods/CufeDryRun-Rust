@@ -1,10 +1,10 @@
 use crate::{
-    models::{CourseParseFormat, CourseRecord, CourseRecordType},
+    models::{CourseFlags, CourseParseFormat, CourseRecord, CourseRecordType},
     services::CourseManager,
 };
 use chrono::{Duration, NaiveTime, Timelike, Weekday};
 use regex::Regex;
-use std::{rc::Rc, usize};
+use std::{collections::HashMap, rc::Rc, usize};
 
 const MIN_HOUR: u32 = 8;
 
@@ -84,6 +84,81 @@ pub fn parse(course_manager: &mut CourseManager, data: &str) {
             parse_format,
         ));
     }
+
+    // Sort courses and apply flags
+    post_process_courses(course_manager);
+}
+
+fn post_process_courses(course_manager: &mut CourseManager) {
+    // Sort course definitions by code
+    course_manager
+        .course_definitions
+        .sort_by(|a, b| a.borrow().code.cmp(&b.borrow().code));
+
+    // Sort records by day then time
+    course_manager
+        .course_records
+        .sort_by_key(|record| (record.day.days_since(Weekday::Sat), record.start_time));
+
+    // Flags
+    course_manager.course_definitions.iter().for_each(|def_rc| {
+        let mut lecture_group_map = HashMap::<i32, i32>::new();
+        let mut tutorial_group_map = HashMap::<i32, i32>::new();
+
+        // How many lecs/tuts for each group?
+        let mut count_groups = |record: &mut CourseRecord, record_type: CourseRecordType| {
+            if record.record_type != record_type {
+                return;
+            }
+
+            let group_map: &mut HashMap<i32, i32>;
+            let mul_index: &mut i32;
+
+            match record_type {
+                CourseRecordType::Lecture => {
+                    group_map = &mut lecture_group_map;
+                    mul_index = &mut record.mullec_index;
+                }
+
+                CourseRecordType::Tutorial => {
+                    group_map = &mut tutorial_group_map;
+                    mul_index = &mut record.multut_index;
+                }
+
+                CourseRecordType::None => return,
+            }
+
+            if !group_map.contains_key(&record.group) {
+                group_map.insert(record.group, 0);
+            }
+
+            // Increment
+            let new_count = group_map.get(&record.group).unwrap() + 1;
+            *group_map.get_mut(&record.group).unwrap() = new_count;
+            *mul_index = new_count;
+        };
+
+        // Start counting
+        course_manager
+            .course_records
+            .iter_mut()
+            .filter(|record| record.course_definition.borrow().code == def_rc.borrow().code)
+            .into_iter()
+            .for_each(|record| {
+                count_groups(record, CourseRecordType::Lecture);
+                count_groups(record, CourseRecordType::Tutorial);
+            });
+
+        // Check for MultipleLectures
+        if lecture_group_map.iter().any(|(_, count)| *count > 1) {
+            def_rc.borrow_mut().flags |= CourseFlags::MultipleLectures;
+        }
+
+        // Check for MultipleTutorials
+        if tutorial_group_map.iter().any(|(_, count)| *count > 1) {
+            def_rc.borrow_mut().flags |= CourseFlags::MultipleTutorials;
+        }
+    });
 }
 
 fn fix_timespan(timespan: &mut NaiveTime) {
